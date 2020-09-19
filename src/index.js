@@ -46,40 +46,67 @@ const reducer = (state = initialState, action) => {
   }
 };
 
-const state0 = reducer(undefined, {
+const validateAction = action => {
+  if (!action || typeof action !== 'object' || Array.isArray(action)) {
+    throw new Error ('Action must be an object!');
+  }
+  if (typeof action.type === 'undefined') {
+    throw new Error ('Action must have a type!');
+  }
+};
+
+const createStore = (reducer_) => {
+  let state = undefined;
+  const subscribers = [];
+  const store = {
+    dispatch: (action) => {
+      validateAction(action);
+      state = reducer_(state, action);
+      subscribers.forEach(handler => handler())
+    },
+    getState: () => state,
+    subscribe: handler => {
+      subscribers.push(handler);
+      console.log(subscribers)
+      return () => {
+        const index = subscribers.indexOf(handler);
+        if (index > 0) {
+          subscribers.splice(index, 1)
+        }
+      }
+    }
+  };
+  store.dispatch({type: '@@redux/INIT'})
+  return store
+}
+
+const store = createStore(reducer);
+
+console.log(store.getState())
+
+
+store.subscribe(() => {
+  console.log('***render***')
+  ReactDOM.render(
+    <pre>{JSON.stringify(store.getState(), null, 2)}</pre>,
+    document.getElementById('root')
+    )
+});
+
+console.log('---before dispatch---')
+
+store.dispatch({
   type: CREATE_NOTE
-});
+})
 
-const state1 = reducer(state0, {
+console.log('---after 1st dispatch---')
+console.log(store)
+
+store.dispatch({
   type: UPDATE_NOTE,
-  id: 2,
+  id: 1,
   content: 'Hello, world!'
-});
+})
 
-ReactDOM.render(
-  <pre>{JSON.stringify(state1, null, 2)}</pre>,
-  document.getElementById('root')
-);
-
-// const NoteApp = ({notes}) => (
-//   <div>
-//     <ul className="note-list">
-//     {
-//       Object.keys(notes).map(id => (
-//         // Obviously we should render something more interesting than the id.
-//         <li className="note-list-item" key={id}>{id}</li>
-//       ))
-//     }
-//     </ul>
-//     <button className="editor-button" onClick={onAddNote}>New Note</button>
-//   </div>
-// );
-
-// const renderApp = () => {
-//   ReactDOM.render(
-//     <NoteApp notes={window.state.notes}/>,
-//     document.getElementById('root')
-//   );
-// };
-
-// renderApp();
+console.log('---after 2nd dispatch---')
+console.log(store.getState())
