@@ -136,21 +136,22 @@ class Provider extends React.Component {
 // };
 
 const connect = (
-  mapStateToProps = () => ({}),
-  mapDispatchToProps = () => ({})
+  mapStateToProps,
+  mapDispatchToProps
   ) => Component => {
+  console.log('--connect...--')
   class Connected extends React.Component {
-    onStoreOrPropsChange(props) {
+    onStoreOrPropsChange() {
       // const {store} = this.context;
       const state = store.getState();
-      const stateProps = mapStateToProps(state, props);
-      const dispatchProps = mapDispatchToProps(store.dispatch, props);
+      const stateProps = mapStateToProps(state);
+      const dispatchProps = mapDispatchToProps(store.dispatch);
       this.setState({
         ...stateProps,
         ...dispatchProps
       });
     }
-    componentWillMount() {
+    componentDidMount() {
       // const {store} = this.context;
       console.log('yoppi')
       this.onStoreOrPropsChange(this.props);
@@ -202,8 +203,6 @@ const mapDispatchToProps = dispatch => ({
 console.log('--before connect--')
 const NoteAppContainer = connect(mapStateToProps, mapDispatchToProps)(NoteApp);
 console.log('--after connect--')
-console.log(store)
-console.log(store.getState())
 
 ReactDOM.render(
   <Provider store={store}>
