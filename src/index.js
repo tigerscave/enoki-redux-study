@@ -270,6 +270,7 @@ class NoteAppContainer extends React.Component {
     })
   }
   render() {
+    console.log('---render---')
     return (
       <NoteApp
         {...this.state}
