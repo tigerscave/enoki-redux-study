@@ -1,5 +1,7 @@
 import React from 'react';
 import ReactDOM from 'react-dom';
+import NoteEditor from './components/NoteEditor'
+import NoteTitle from './components/NoteTitle'
 import './index.css';
 
 
@@ -147,31 +149,31 @@ console.log(store.getState())
 
 //components
 
-const NoteEditor = ({note, onChangeNote, onCloseNote}) => (
-  <div>
-    <div>
-      <textarea
-        className='editor-content'
-        autoFocus
-        value={note.content}
-        onChange={event =>
-          onChangeNote(note.id, event.target.value)
-        }
-      />
-      <button className='editor-button' onClick={onCloseNote}>
-        close
-      </button>
-    </div>
-  </div> 
-)
+// const NoteEditor = ({note, onChangeNote, onCloseNote}) => (
+//   <div>
+//     <div>
+//       <textarea
+//         className='editor-content'
+//         autoFocus
+//         value={note.content}
+//         onChange={event =>
+//           onChangeNote(note.id, event.target.value)
+//         }
+//       />
+//       <button className='editor-button' onClick={onCloseNote}>
+//         close
+//       </button>
+//     </div>
+//   </div> 
+// )
 
-const NoteTitle = ({note}) => {
-  const title = note.content.split('¥n')[0].replace(/^¥s+|¥s+$/g, '');
-  if (title === '') {
-    return <i>Untitled</i>;
-  }
-  return <span>{title}</span>
-};
+// const NoteTitle = ({note}) => {
+//   const title = note.content.split('¥n')[0].replace(/^¥s+|¥s+$/g, '');
+//   if (title === '') {
+//     return <i>Untitled</i>;
+//   }
+//   return <span>{title}</span>
+// };
 
 const NoteLink = ({note, onOpenNote}) => (
   <li className="note-list-item">
