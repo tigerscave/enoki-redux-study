@@ -89,21 +89,20 @@ const validateAction = action => {
   }
 };
 
-const createStore = (reducer_) => {
+const createStore = (reducer_, middleware) => {
   let state = undefined;
   const subscribers = [];
+  const coreDispatch = action => {
+    validateAction(action);
+    state = reducer(state, action)
+    subscribers.forEach(handler => handler())
+  };
+  const getState = () => state
   const store = {
-    dispatch: (action) => {
-      validateAction(action);
-      state = reducer_(state, action);
-      subscribers.forEach(handler => handler())
-      console.log('--huga--')
-    },
-    getState: () => state,
+    dispatch: coreDispatch,
+    getState,
     subscribe: handler => {
-      console.log(subscribers)
       subscribers.push(handler);
-      console.log(subscribers)
       return () => {
         const index = subscribers.indexOf(handler);
         if (index > 0) {
@@ -112,11 +111,48 @@ const createStore = (reducer_) => {
       }
     }
   };
-  store.dispatch({type: '@@redux/INIT'})
+  if (middleware) {
+    const dispatch = action => store.dispatch(action);
+    console.log(middleware)
+    store.dispatch = middleware({getState})(coreDispatch);
+  }
+  coreDispatch({type: '@@redux/INIT'})
   return store
 }
 
-const store = createStore(reducer);
+const delayMidlleware = () => next => action => {
+  setTimeout(() => {
+    next(action);
+  }, 1000);
+}
+
+const loggingMiddleware = ({getState}) => next => action => {
+  console.info("before", getState());
+  console.info("action", action)
+  const result = next(action);
+  console.info("after", getState())
+  return result
+}
+
+const applyMiddleware = (...middlewares) => store => {
+  if (middlewares.length === 0) {
+    return dispatch => dispatch;
+  }
+  if (middlewares.length === 1) {
+    return middlewares[0](store);
+  }
+  const boundMiddlewares = middlewares.map(middleware =>
+    middleware(store)
+  );
+  return boundMiddlewares.reduce((a,b) => 
+    next => a(b(next))
+  )
+};
+
+const store = createStore(reducer, applyMiddleware(
+  delayMidlleware,
+  loggingMiddleware
+  ));
 
 const {PropTypes} = React;
 
