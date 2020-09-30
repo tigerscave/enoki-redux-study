@@ -16,7 +16,8 @@ const CLOSE_NOTE = 'CLOSE_NOTE';
 
   //reducer
   const initialState = {
-    nextNoteId: 1,
+    // nextNoteId: 1,
+    isLoading: false,
     notes: {},
     openNoteId: null,
   };
@@ -24,20 +25,24 @@ const CLOSE_NOTE = 'CLOSE_NOTE';
   const reducer = (state = initialState, action) => {
     switch (action.type) {
       case CREATE_NOTE: {
-        const id = state.nextNoteId;
+        if (!action.id) {
+          return {
+            ...state,
+            isLoading: true
+          };
+        }
+        // const id = state.nextNoteId;
         const newNote = {
-          id,
+          id: action.id,
           content: ''
         };
-        console.log('---before CREATE_NOTE---')
-        console.log(store.getState())
         return {
           ...state,
-          nextNoteId: id + 1,
-          openNoteId: id,
+          // nextNoteId: id + 1,
+          openNoteId: action.id,
           notes: {
             ...state.notes,
-            [id]: newNote
+            [action.id]: newNote
           }
         };
       }
@@ -56,16 +61,12 @@ const CLOSE_NOTE = 'CLOSE_NOTE';
         };
       }
       case OPEN_NOTE: {
-        console.log('---before OPEN_NOTE---')
-        console.log(store.getState())
         return {
           ...state,
           openNoteId: action.id
         };
       }
       case CLOSE_NOTE: {
-        console.log('---before CLOSE_NOTE---')
-        console.log(store.getState())
         return {
           ...state,
           openNoteId: null
@@ -114,17 +115,24 @@ const createStore = (reducer_, middleware) => {
   if (middleware) {
     const dispatch = action => store.dispatch(action);
     console.log(middleware)
-    store.dispatch = middleware({getState})(coreDispatch);
+    store.dispatch = middleware({dispatch, getState})(coreDispatch);
   }
   coreDispatch({type: '@@redux/INIT'})
   return store
 }
 
-const delayMidlleware = () => next => action => {
-  setTimeout(() => {
-    next(action);
-  }, 1000);
-}
+// const delayMidlleware = () => next => action => {
+//   setTimeout(() => {
+//     next(action);
+//   }, 1000);
+// }
+
+const thunkMiddleware = ({dispatch, getState}) => next => action => {
+  if (typeof action === 'function') {
+    return action(dispatch, getState);
+  }
+  return next(action);
+};
 
 const loggingMiddleware = ({getState}) => next => action => {
   console.info("before", getState());
@@ -150,11 +158,11 @@ const applyMiddleware = (...middlewares) => store => {
 };
 
 const store = createStore(reducer, applyMiddleware(
-  delayMidlleware,
+  thunkMiddleware,
   loggingMiddleware
   ));
 
-const {PropTypes} = React;
+// const {PropTypes} = React;
 
 class Provider extends React.Component {
   getChildContext() {
@@ -213,15 +221,48 @@ const connect = (
   return Connected
 }
 
+// API
+
+const createFakeApi = () => {
+  let _id =0;
+  const createNote = () => new Promise(resolve =>
+    setTimeout(() => {
+      _id++;
+      resolve({
+        id: `${_id}`
+      });
+    }, 1000))
+    return {
+      createNote
+    };
+};
+
+const api = createFakeApi();
+
+const createNote = () => {
+  return (dispatch) => {
+    dispatch({
+      type: CREATE_NOTE
+    });
+    api.createNote().then(({id}) => {
+      dispatch({
+        type: CREATE_NOTE,
+        id
+      })
+    });
+  }
+}
+
 const mapStateToProps = state => ({
   notes: state.notes,
   openNoteId: state.openNoteId
 });
 
 const mapDispatchToProps = dispatch => ({
-  onAddNote: () => dispatch({
-    type: CREATE_NOTE
-  }),
+  // onAddNote: () => dispatch({
+  //   type: CREATE_NOTE
+  // }),
+  onAddNote: () => dispatch(createNote()),
   onChangeNote: (id, content) => dispatch({
     type: UPDATE_NOTE,
     id,
